@@ -1,75 +1,109 @@
 #include <stdio.h>
-#include <stdbool.h>
-#include <string.h>
 #include <stdlib.h>
+#include <string.h>
 
 #define MAX_CARROS 10
+#define TAM_PLACA 8
 
-// Estrutura para representar o estacionamento
+//As estruturas servem para armazenar diferentes tipos de dados em um unico "pacote" 
 typedef struct {
-    char placas[MAX_CARROS][8]; // arrays de strings "placas"
-    int topo; // é o topo => indica a posição do ultimo carro no estacionamento.
+    char placa[TAM_PLACA];
+} Carro;
+
+// estruturas de dados criada para 
+typedef struct {
+    Carro carros[MAX_CARROS];
+    int frente, fundo;
+    int tamanho;
 } Estacionamento;
 
-// Função para inicializar o estacionamento
-void inicializarEstacionamento(Estacionamento *e) {
-    e->topo = -1;
+void inicializarFilaEstacionamento(Estacionamento *fila) {
+    fila->frente = 0;
+    fila->fundo = -1; // é atribuido -1 ao fundo para indicar q a fila está vazia.
+    fila->tamanho = 0;
 }
 
-// Função para verificar se o estacionamento está cheio
-bool estacionamentoCheio(Estacionamento *e) {
-    return e->topo == MAX_CARROS - 1;
+int filaVazia(Estacionamento *fila) {
+    return (fila->tamanho == 0);
 }
 
-// Função para verificar se o estacionamento está vazio
-bool estacionamentoVazio(Estacionamento *e) {
-    return e->topo == -1;
+int filaCheia(Estacionamento *fila) {
+    return (fila->tamanho == MAX_CARROS);
 }
 
-// Função para adicionar um carro ao estacionamento
-bool entrarEstacionamento(Estacionamento *e, char placa[]) {
-    if (!estacionamentoCheio(e)) {
-        strcpy(e->placas[++e->topo], placa);
-        printf("Carro com placa %s entrou. Vagas disponíveis: %d\n", placa, MAX_CARROS - e->topo - 1);
-        return true;
+void entrarNaFila(Estacionamento *fila, char *placa) {
+    if (filaCheia(fila)) {
+        printf("Estacionamento lotado. O carro com placa %s nao pode entrar.\n", placa);
     } else {
-        printf("Não há vagas para o carro com placa %s. Carro foi embora.\n", placa);
-        return false;
+        fila->fundo = (fila->fundo + 1) % MAX_CARROS;
+        strcpy(fila->carros[fila->fundo].placa, placa);
+        fila->tamanho++;
+        printf("Carro com placa %s estacionado.\n", placa);
     }
 }
 
-// Função para remover um carro do estacionamento
-void sairEstacionamento(Estacionamento *e, char placa[]) {
-    if (!estacionamentoVazio(e)) {
-        int i;
-        for (i = 0; i <= e->topo; i++) {
-            if (strcmp(e->placas[i], placa) == 0) {
-                printf("Carro com placa %s saiu.\n", placa);
-                for (int j = i; j < e->topo; j++) {
-                    strcpy(e->placas[j], e->placas[j + 1]);
-                }
-                e->topo--;
-                break;
-            }
-        }
-        if (i > e->topo) {
-            printf("Carro com placa %s não encontrado.\n", placa);
-        }
+void sairDaFila(Estacionamento *fila) {
+    if (filaVazia(fila)) {
+        printf("O estacionamento esta vazio.\n");
     } else {
-        printf("Estacionamento vazio. Não há carros para sair.\n");
+        printf("Carro com placa %s saindo do estacionamento.\n", fila->carros[fila->frente].placa);
+        fila->frente = (fila->frente + 1) % MAX_CARROS;
+        fila->tamanho--;
+    }
+}
+
+void listarEstacionamento(Estacionamento *fila) {
+    printf("Vagas ocupadas: %d\n", fila->tamanho);
+    printf("Vagas disponiveis: %d\n", MAX_CARROS - fila->tamanho);
+    if (filaVazia(fila)) {
+        printf("O estacionamento esta vazio.\n");
+    } else {
+        printf("Carros estacionados:\n");
+        int i;
+        int posicao = fila->frente;
+        for (i = 0; i < fila->tamanho; i++) {
+            printf("%d: %s\n", i + 1, fila->carros[posicao].placa);
+            posicao = (posicao + 1) % MAX_CARROS;
+        }
     }
 }
 
 int main() {
-    Estacionamento estacionamento;
-    inicializarEstacionamento(&estacionamento);
+    Estacionamento fila;
+    inicializarFilaEstacionamento(&fila);
 
-    // Simulação de entrada e saída de carros
-    entrarEstacionamento(&estacionamento, "ABC1234");
-    entrarEstacionamento(&estacionamento, "DEF5678");
-    sairEstacionamento(&estacionamento, "ABC1234");
-    entrarEstacionamento(&estacionamento, "GHI9012");
-    // Continue com a simulação conforme necessário...
+    char placa[TAM_PLACA];
+    int operacao;
+
+    printf("Menu:\n");
+    printf("1 - Entrada de carro\n");
+    printf("2 - Saida de carro\n");
+    printf("3 - Listar carros estacionados\n");
+    printf("0 - Encerrar\n");
+
+    do {
+        printf("\nDigite o numero do menu: ");
+        scanf("%d", &operacao);
+
+        switch (operacao) {
+            case 1:
+                printf("Digite a placa do carro: ");
+                scanf("%s", placa);
+                entrarNaFila(&fila, placa);
+                break;
+            case 2:
+                sairDaFila(&fila);
+                break;
+            case 3:
+                listarEstacionamento(&fila);
+                break;
+            case 0:
+                printf("Encerrando o programa.\n");
+                break;
+            default:
+                printf("Operacao invalida.\n");
+        }
+    } while (operacao != 0);
 
     return 0;
 }
